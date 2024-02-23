@@ -4,15 +4,12 @@ int main(int argc, char *argv[]) {
   SDL_Init(SDL_INIT_VIDEO);
 
   SDL_Window *window =
-      SDL_CreateWindow("Pong", // window title
-                               // SDL_WINDOWPOS_UNDEFINED, // initial x position
-                               // SDL_WINDOWPOS_UNDEFINED, // initial y position
-                       50,     //
-                       SDL_WINDOWPOS_UNDEFINED,
-                       WINDOW_WIDTH,     // width, in pixels
-                       WINDOW_HEIGHT,    // height, in pixels
-                       SDL_WINDOW_OPENGL // flags - see below
-                                         // SDL_WINDOW_SHOWN
+      SDL_CreateWindow("Pong",                  // window title
+                       50,                      // initial x position
+                       SDL_WINDOWPOS_UNDEFINED, // initial y position
+                       WINDOW_WIDTH,            // width, in pixels
+                       WINDOW_HEIGHT,           // height, in pixels
+                       SDL_WINDOW_OPENGL        // flags - see below
       );
 
   if (window == NULL) {

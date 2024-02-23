@@ -1,4 +1,5 @@
 #include "pong.h"
+#include "digits.h"
 #include "math.h"
 #include <SDL.h>
 
@@ -82,7 +83,6 @@ void update_game_state(GameState *gameState) {
   ball->y += ball->yVelocity;
 
   // Collision detection
-
   Rectangle ballRect;
   ballRect.x = ball->x - ball->radius;
   ballRect.y = ball->y - ball->radius;
@@ -106,7 +106,7 @@ void update_game_state(GameState *gameState) {
     float normalizedRelativeIntersectionY = yIntersection / (PADDLE_HEIGHT / 2);
     float bounceAngle = normalizedRelativeIntersectionY * MAX_BOUNCE_ANGLE;
     ball->x = p1->x + p1->width + ball->radius;
-    ball->speed += BALL_SPEED_MULTIPLIER;
+    ball->speed += BALL_SPEED_INCREMENT;
     ball->xVelocity = ball->speed * cos(bounceAngle);
     ball->yVelocity = ball->speed * sin(bounceAngle) * -1;
   }
@@ -116,7 +116,7 @@ void update_game_state(GameState *gameState) {
     float bounceAngle = normalizedRelativeIntersectionY * MAX_BOUNCE_ANGLE;
 
     ball->x = p2->x - ball->radius;
-    ball->speed += BALL_SPEED_MULTIPLIER;
+    ball->speed += BALL_SPEED_INCREMENT;
     ball->xVelocity = ball->speed * cos(bounceAngle) * -1;
     ball->yVelocity = ball->speed * sin(bounceAngle) * -1;
   }
@@ -193,80 +193,20 @@ void render_game(SDL_Renderer *renderer, const GameState *gameState) {
                    gameState->ball.radius * 2, gameState->ball.radius * 2};
   SDL_RenderFillRect(renderer, &ball);
 
-  render_number(renderer, gameState->scorePlayer1,
-                gameState->scorePlayer1 >= 10
-                    ? (WINDOW_WIDTH / 2) - (2 * (DIGIT_PADDING + DIGIT_WIDTH)) -
-                          DIGIT_PADDING
-                    : (WINDOW_WIDTH / 2) - (DIGIT_WIDTH + DIGIT_PADDING) -
-                          DIGIT_PADDING,
-                WINDOW_HEIGHT - (DIGIT_HEIGHT + 50));
+  int p1ScoreNumDigits =
+      gameState->scorePlayer1 == 0 ? 1 : log10(gameState->scorePlayer1) + 1;
+  int p1ScoreX = (WINDOW_WIDTH / 2) -
+                 (p1ScoreNumDigits * (DIGIT_WIDTH + DIGIT_PADDING)) -
+                 DIGIT_PADDING;
+
+  int p1ScoreY = WINDOW_HEIGHT - (DIGIT_HEIGHT + 50);
+  render_number(renderer, gameState->scorePlayer1, p1ScoreX, p1ScoreY);
 
   render_number(renderer, gameState->scorePlayer2,
                 (WINDOW_WIDTH / 2) + (2 * DIGIT_PADDING),
                 WINDOW_HEIGHT - (DIGIT_HEIGHT + 50));
 
   SDL_RenderPresent(renderer);
-}
-
-// Each digit's representation is a 3x5 matrix, where 1 indicates to draw a
-// rectangle
-int digits[10][15] = {
-    {1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1}, // 0
-    {0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0}, // 1
-    {1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1}, // 2
-    {1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1}, // 3
-    {1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1}, // 4
-    {1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1}, // 5
-    {1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1}, // 6
-    {1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1}, // 7
-    {1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1}, // 8
-    {1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1}  // 9
-};
-
-void render_digit(SDL_Renderer *renderer, int digit, int x, int y) {
-  if (digit < 0 || digit > 9)
-    return; // Check for valid digit
-
-  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White color
-
-  for (int row = 0; row < 5; row++) {
-    for (int col = 0; col < 3; col++) {
-      if (digits[digit][row * 3 + col] == 1) {
-        SDL_Rect rect = {x + col * (DIGIT_WIDTH / 3),
-                         y + row * (DIGIT_HEIGHT / 5), DIGIT_WIDTH / 3,
-                         DIGIT_HEIGHT / 5};
-        SDL_RenderFillRect(renderer, &rect);
-      }
-    }
-  }
-}
-
-void render_number(SDL_Renderer *renderer, int number, int x, int y) {
-
-  if (number == 0) {
-    render_digit(renderer, 0, x, y);
-    return;
-  }
-  int numDigits = 0;
-  int tempNumber = number;
-
-  // Count the number of digits in the number
-  do {
-    numDigits++;
-    tempNumber /= 10;
-  } while (tempNumber != 0);
-
-  tempNumber = number;
-  int digitPosition = numDigits - 1;
-
-  // Render each digit
-  while (tempNumber != 0) {
-    int digit = tempNumber % 10;
-    render_digit(renderer, digit,
-                 x + digitPosition * (DIGIT_WIDTH + DIGIT_PADDING), y);
-    tempNumber /= 10;
-    digitPosition--;
-  }
 }
 
 SDL_bool checkCollision(Rectangle *a, Rectangle *b) {
