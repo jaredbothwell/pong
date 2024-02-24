@@ -1,7 +1,9 @@
 #include "pong.h"
 #include "digits.h"
-#include "math.h"
 #include <SDL.h>
+#include <math.h>
+#include <stdlib.h>
+#include <time.h>
 
 void initialize_game_state(GameState *gameState) {
   gameState->player1.x = PADDLE_SPACE;
@@ -10,7 +12,7 @@ void initialize_game_state(GameState *gameState) {
   gameState->player1.width = PADDLE_WIDTH;
   gameState->player1.yVelocity = 0;
 
-  gameState->player2.x = WINDOW_WIDTH - (PADDLE_SPACE);
+  gameState->player2.x = WINDOW_WIDTH - PADDLE_SPACE - PADDLE_WIDTH;
   gameState->player2.y = (WINDOW_HEIGHT / 2) - (PADDLE_HEIGHT / 2);
   gameState->player2.height = PADDLE_HEIGHT;
   gameState->player2.width = PADDLE_WIDTH;
@@ -19,6 +21,7 @@ void initialize_game_state(GameState *gameState) {
   gameState->ball.x = WINDOW_WIDTH / 2;
   gameState->ball.y = WINDOW_HEIGHT / 2;
   gameState->ball.radius = 5;
+
   gameState->ball.speed = INITIAL_BALL_SPEED;
   gameState->ball.xVelocity = gameState->ball.speed * cos(0);
   gameState->ball.yVelocity = gameState->ball.speed * sin(0);
@@ -144,28 +147,12 @@ void update_game_state(GameState *gameState) {
 
   if (ball->x < 0) {
     gameState->scorePlayer2 += 1;
-
-    p1->y = WINDOW_HEIGHT / 2 - p1->height / 2;
-    p2->y = WINDOW_HEIGHT / 2 - p2->height / 2;
-
-    ball->x = WINDOW_WIDTH / 2;
-    ball->y = WINDOW_HEIGHT / 2;
-    ball->speed = INITIAL_BALL_SPEED;
-    ball->xVelocity = ball->speed * cos(0);
-    ball->yVelocity = ball->speed * sin(0);
+    reset_after_point(gameState, 1);
   }
 
   if (ball->x > WINDOW_WIDTH) {
     gameState->scorePlayer1 += 1;
-
-    p1->y = WINDOW_HEIGHT / 2 - p1->height / 2;
-    p2->y = WINDOW_HEIGHT / 2 - p2->height / 2;
-
-    ball->x = WINDOW_WIDTH / 2;
-    ball->y = WINDOW_HEIGHT / 2;
-    ball->speed = INITIAL_BALL_SPEED;
-    ball->xVelocity = ball->speed * cos(0);
-    ball->yVelocity = ball->speed * sin(0);
+    reset_after_point(gameState, -1);
   }
 }
 
@@ -199,12 +186,10 @@ void render_game(SDL_Renderer *renderer, const GameState *gameState) {
                  (p1ScoreNumDigits * (DIGIT_WIDTH + DIGIT_PADDING)) -
                  DIGIT_PADDING;
 
-  int p1ScoreY = WINDOW_HEIGHT - (DIGIT_HEIGHT + 50);
-  render_number(renderer, gameState->scorePlayer1, p1ScoreX, p1ScoreY);
+  render_number(renderer, gameState->scorePlayer1, p1ScoreX, 50);
 
-  render_number(renderer, gameState->scorePlayer2,
-                (WINDOW_WIDTH / 2) + (2 * DIGIT_PADDING),
-                WINDOW_HEIGHT - (DIGIT_HEIGHT + 50));
+  int p2ScoreX = (WINDOW_WIDTH / 2) + (2 * DIGIT_PADDING);
+  render_number(renderer, gameState->scorePlayer2, p2ScoreX, 50);
 
   SDL_RenderPresent(renderer);
 }
@@ -220,4 +205,23 @@ SDL_bool checkCollision(Rectangle *a, Rectangle *b) {
     return SDL_FALSE;
 
   return SDL_TRUE;
+}
+
+float get_serve_angle() {
+  float normalized = (float)rand() / RAND_MAX;
+  float scaled = (2 * M_PI / 3) * normalized - (M_PI / 3);
+  return scaled;
+}
+
+void reset_after_point(GameState *gameState, int direction) {
+  gameState->player1.y = WINDOW_HEIGHT / 2 - gameState->player1.height / 2;
+  gameState->player2.y = WINDOW_HEIGHT / 2 - gameState->player2.height / 2;
+
+  float ballAngle = get_serve_angle();
+  int d = direction > 0 ? 1 : -1;
+  gameState->ball.x = WINDOW_WIDTH / 2;
+  gameState->ball.y = WINDOW_HEIGHT / 2;
+  gameState->ball.speed = INITIAL_BALL_SPEED;
+  gameState->ball.xVelocity = gameState->ball.speed * cos(ballAngle) * d;
+  gameState->ball.yVelocity = gameState->ball.speed * sin(ballAngle);
 }

@@ -45,5 +45,7 @@ void handle_input(SDL_Event e, GameState *gameState);
 void update_game_state(GameState *gameState);
 void render_game(SDL_Renderer *renderer, const GameState *gameState);
 SDL_bool checkCollision(Rectangle *a, Rectangle *b);
+float get_serve_angle();
+void reset_after_point(GameState *gameState, int direction);
 
 #endif
